@@ -40,9 +40,13 @@ def check_reminders():
         print(f"Reminder: {r[1]} - {r[2]}")
     return due
 
-# ---- TEST ----
+def add_sample_reminders():
+    from datetime import datetime, timedelta
+    add_reminder("Take Medicine", "Paracetamol 500mg", (datetime.now() + timedelta(minutes=1)).strftime("%Y-%m-%d %H:%M"))
+    add_reminder("Drink Water", "250ml water", (datetime.now() + timedelta(minutes=2)).strftime("%Y-%m-%d %H:%M"))
+    add_reminder("Evening Walk", "15 min walk", (datetime.now() + timedelta(minutes=3)).strftime("%Y-%m-%d %H:%M"))
+
 if __name__ == "__main__":
-    print(add_reminder("Take Medicine", "Paracetamol 500mg", (datetime.now() + timedelta(minutes=1)).strftime("%Y-%m-%d %H:%M")))
+    add_sample_reminders()
     print("All Reminders:", get_all_reminders())
-    print("Checking due reminders...")
     check_reminders()
