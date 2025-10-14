@@ -1,0 +1,68 @@
+{
+    "alerts": [
+        {
+            "type": "fall",
+            "parameter": "magnitude",
+            "value": 5.372,
+            "message": "Fall detected! Magnitude: 5.37g, Activity: FALL_IMPACT",
+            "time": "2025-10-14T15:11:33.631083",
+            "severity": "HIGH"
+        },
+        {
+            "type": "health",
+            "parameter": "bp_systolic",
+            "value": 138,
+            "message": "Abnormal bp_systolic: 138",
+            "time": "2025-10-14T15:14:36.895453"
+        },
+        {
+            "type": "health",
+            "parameter": "bp_diastolic",
+            "value": 88,
+            "message": "Abnormal bp_diastolic: 88",
+            "time": "2025-10-14T15:14:36.895453"
+        },
+        {
+            "type": "health",
+            "parameter": "bp_systolic",
+            "value": 127,
+            "message": "Abnormal bp_systolic: 127",
+            "time": "2025-10-14T15:14:37.246991"
+        },
+        {
+            "type": "health",
+            "parameter": "bp_systolic",
+            "value": 151,
+            "message": "Abnormal bp_systolic: 151",
+            "time": "2025-10-14T15:14:37.259326"
+        },
+        {
+            "type": "health",
+            "parameter": "bp_diastolic",
+            "value": 83,
+            "message": "Abnormal bp_diastolic: 83",
+            "time": "2025-10-14T15:14:37.259326"
+        },
+        {
+            "type": "health",
+            "parameter": "bp_systolic",
+            "value": 123,
+            "message": "Abnormal bp_systolic: 123",
+            "time": "2025-10-14T15:14:37.295177"
+        },
+        {
+            "type": "health",
+            "parameter": "bp_diastolic",
+            "value": 82,
+            "message": "Abnormal bp_diastolic: 82",
+            "time": "2025-10-14T15:14:37.320777"
+        },
+        {
+            "type": "health",
+            "parameter": "bp_systolic",
+            "value": 87,
+            "message": "Abnormal bp_systolic: 87",
+            "time": "2025-10-14T15:14:37.350404"
+        }
+    ]
+}
