@@ -1,5 +1,10 @@
 from reminder_agent.reminder_agent import add_sample_reminders, get_all_reminders, check_reminders
 from emergency_agent.emergency_agent import detect_emergency
+from cognitive_health_agent.cog_bot import app as cognitive_app
+import threading
+
+def run_cognitive_agent():
+    cognitive_app.run(port=5000, debug=False, use_reloader=False)
 
 def main():
     # 1️⃣ Add sample reminders to the database
@@ -31,5 +36,12 @@ def main():
     print("All Reminders:", all_reminders)
     print("Emergency Alerts:", emergency_alerts)
 
+
+
 if __name__ == "__main__":
+    # Start cognitive bot in a separate thread
+    t1 = threading.Thread(target=run_cognitive_agent)
+    t1.start()
+
+    # Then start your main logic
     main()

@@ -47,7 +47,14 @@ def score_answer(category, question, answer):
 
 @app.route("/")
 def index():
-    return render_template_string(INDEX_HTML)
+    session["state"] = {"asked": [], "scores": {}}
+    first_cat = random.choice(list(QUESTION_BANK.keys()))
+    first_q = random.choice(QUESTION_BANK[first_cat])
+    session["state"]["asked"].append(first_q)
+    session["state"]["last_category"] = first_cat
+    session["state"]["last_question"] = first_q
+    return render_template_string(INDEX_HTML, first_question=first_q)
+
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -208,6 +215,15 @@ INDEX_HTML = """
         console.error("TTS not supported.");
       }
     }
+        // --- Auto-start first question if provided ---
+    window.onload = function() {
+      const firstQ = "{{ first_question|safe }}";
+      if (firstQ) {
+        append("👋 Hello! Let's begin your assessment.", "bot");
+        append(firstQ, "bot");
+      }
+    };
+
   </script>
 </body>
 </html>
