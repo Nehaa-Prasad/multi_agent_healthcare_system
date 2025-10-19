@@ -23,7 +23,7 @@ class HealthDataSimulator:
         self.variation_factor = 0.1  # 10% variation
         
         # Data storage
-        self.data_file = "data/vitals_stream.json"
+        self.data_file = os.path.join(os.getcwd(), "data", "vitals_stream.json")
         self.ensure_data_directory()
         
     def generate_vitals(self):

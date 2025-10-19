@@ -28,7 +28,7 @@ class FallDetectionSimulator:
         self.inactivity_threshold = 30
         
         # Data storage
-        self.data_file = "../data/fall_events.json"
+        self.data_file = os.path.join(os.getcwd(), "data", "fall_events.json")
         self.ensure_data_directory()
         
     def generate_normal_movement(self):

@@ -4,7 +4,7 @@ import random
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-# Sample dynamic questions
+# --- Question bank ---
 QUESTION_BANK = {
     "orientation": [
         "What is today's date?",
@@ -28,15 +28,17 @@ QUESTION_BANK = {
     ]
 }
 
-# Simple scoring rules
+# --- Scoring logic ---
 def score_answer(category, question, answer):
     if not answer:
         return 0
     answer = answer.lower()
     if category == "orientation":
-        return 1 if any(word in answer for word in ["monday","tuesday","wednesday","thursday","friday","saturday","sunday",
-                                                   "january","february","march","april","may","june","july","august",
-                                                   "september","october","november","december"]) else 0
+        return 1 if any(word in answer for word in [
+            "monday","tuesday","wednesday","thursday","friday","saturday","sunday",
+            "january","february","march","april","may","june","july","august",
+            "september","october","november","december"
+        ]) else 0
     if category == "attention":
         return 1 if "19" in answer or "dlrow" in answer or "93" in answer else 0
     if category == "memory":
@@ -45,6 +47,7 @@ def score_answer(category, question, answer):
         return 1 if any(word in answer for word in ["dog","cat","lion","tiger","no ifs","scissors"]) else 0
     return 0
 
+# --- Routes ---
 @app.route("/")
 def index():
     session["state"] = {"asked": [], "scores": {}}
@@ -54,7 +57,6 @@ def index():
     session["state"]["last_category"] = first_cat
     session["state"]["last_question"] = first_q
     return render_template_string(INDEX_HTML, first_question=first_q)
-
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -93,7 +95,6 @@ def finish():
     total_score = sum(scores.values())
     history = state.get("asked", [])
 
-    # Small textual summary
     summary_text = f"Assessment Summary:\nTotal Score: {total_score}\nScores by category:\n"
     for cat, sc in scores.items():
         summary_text += f" - {cat}: {sc}\n"
@@ -110,17 +111,35 @@ def finish():
     }
 
     return jsonify(result)
+    result_path = os.path.join("data", "cognitive_results.json")
+    with open(result_path, "w") as f:
+      json.dump(result, f, indent=2)
 
+
+@app.route("/health")
+def health():
+    """For checking if Flask bot is alive."""
+    return "Cognitive bot running OK", 200
+
+# --- Function for integration ---
+def run_cognitive_bot():
+    """Used by main.py"""
+    app.run(host="127.0.0.1", port=5001, debug=False, use_reloader=False)
+
+# --- HTML Template ---
 INDEX_HTML = """
 <!DOCTYPE html>
 <html>
 <head>
   <title>Elderly Care Cognitive Chatbot</title>
   <style>
-    body { font-family: Arial, sans-serif; }
-    #chat { border: 1px solid #aaa; padding: 10px; height: 300px; overflow-y: scroll; margin-bottom: 10px; }
+    body { font-family: Arial, sans-serif; background: #f8f9fa; margin: 20px; }
+    #chat { border: 1px solid #ccc; padding: 10px; height: 350px; overflow-y: auto; background: white; border-radius: 10px; }
     .user { color: blue; margin: 5px 0; }
     .bot { color: green; margin: 5px 0; }
+    input, button { padding: 8px; border-radius: 5px; margin-top: 10px; }
+    button { background-color: #007BFF; color: white; border: none; cursor: pointer; }
+    button:hover { background-color: #0056b3; }
   </style>
 </head>
 <body>
@@ -165,11 +184,7 @@ INDEX_HTML = """
     document.getElementById("finish").onclick = async function(){
       const res = await fetch("/finish");
       const data = await res.json();
-
-      // Display summary in chat
       append(data.summary_text, "bot");
-
-      // Download JSON automatically
       const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -185,14 +200,11 @@ INDEX_HTML = """
       recognition.continuous = false;
       recognition.interimResults = false;
       recognition.lang = "en-US";
-
       recognition.onresult = function(event) {
         const text = event.results[0][0].transcript;
-        console.log("Heard:", text);
         document.getElementById("entry").value = text;
         document.getElementById("send").click();
       };
-
       recognition.onerror = function(event) {
         console.error("Speech recognition error:", event.error);
       };
@@ -211,11 +223,10 @@ INDEX_HTML = """
         utter.pitch = 1;
         utter.lang = "en-US";
         speechSynthesis.speak(utter);
-      } else {
-        console.error("TTS not supported.");
       }
     }
-        // --- Auto-start first question if provided ---
+
+    // Auto start
     window.onload = function() {
       const firstQ = "{{ first_question|safe }}";
       if (firstQ) {
@@ -223,12 +234,10 @@ INDEX_HTML = """
         append(firstQ, "bot");
       }
     };
-
   </script>
 </body>
 </html>
 """
 
 if __name__ == "__main__":
-    app.run(debug=True)
-
+    run_cognitive_bot()

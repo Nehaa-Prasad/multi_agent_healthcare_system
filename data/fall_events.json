@@ -8,5 +8,311 @@
     "activity": "FALL_IMPACT",
     "device_id": "fall_sensor_001",
     "alert_level": "HIGH"
+  },
+  {
+    "timestamp": "2025-10-19T08:46:52.426512",
+    "x": -0.125,
+    "y": 0.444,
+    "z": 1.137,
+    "magnitude": 1.227,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T08:46:52.965967",
+    "x": -0.112,
+    "y": -0.485,
+    "z": 1.124,
+    "magnitude": 1.229,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T08:46:53.495668",
+    "x": -0.241,
+    "y": 0.19,
+    "z": 1.03,
+    "magnitude": 1.075,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T08:46:54.001686",
+    "x": 0.344,
+    "y": 0.272,
+    "z": 1.029,
+    "magnitude": 1.118,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T08:46:54.506625",
+    "x": 0.352,
+    "y": 0.3,
+    "z": 0.975,
+    "magnitude": 1.079,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T08:46:55.012927",
+    "x": -0.196,
+    "y": -0.278,
+    "z": 1.115,
+    "magnitude": 1.166,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T08:46:55.517981",
+    "x": 0.076,
+    "y": -0.084,
+    "z": 0.945,
+    "magnitude": 0.952,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T08:46:56.022754",
+    "x": 0.353,
+    "y": 0.394,
+    "z": 0.909,
+    "magnitude": 1.052,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T08:46:56.527090",
+    "x": -0.423,
+    "y": 0.431,
+    "z": 0.96,
+    "magnitude": 1.134,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T08:46:57.032166",
+    "x": 0.036,
+    "y": -0.065,
+    "z": 1.086,
+    "magnitude": 1.088,
+    "activity": "INACTIVE",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T08:46:57.537515",
+    "x": -0.26,
+    "y": -0.204,
+    "z": 0.858,
+    "magnitude": 0.919,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T08:46:58.044499",
+    "x": 0.434,
+    "y": -0.205,
+    "z": 1.018,
+    "magnitude": 1.125,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T08:54:47.978053",
+    "x": -0.327,
+    "y": -0.46,
+    "z": 0.842,
+    "magnitude": 1.013,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T08:54:48.527737",
+    "x": -0.222,
+    "y": -0.022,
+    "z": 1.329,
+    "magnitude": 1.348,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T08:54:49.033221",
+    "x": -0.272,
+    "y": -0.084,
+    "z": 0.668,
+    "magnitude": 0.726,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T08:54:49.540145",
+    "x": -0.295,
+    "y": -0.132,
+    "z": 1.08,
+    "magnitude": 1.127,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T08:54:50.044969",
+    "x": 0.421,
+    "y": 0.571,
+    "z": 0.766,
+    "magnitude": 1.044,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T08:54:50.549168",
+    "x": -0.243,
+    "y": 0.011,
+    "z": 1.212,
+    "magnitude": 1.236,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T09:16:32.286515",
+    "x": 0.333,
+    "y": 0.138,
+    "z": 0.932,
+    "magnitude": 1.0,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T09:16:32.934144",
+    "x": 0.276,
+    "y": 0.02,
+    "z": 0.998,
+    "magnitude": 1.036,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T09:16:33.442854",
+    "x": -0.53,
+    "y": -0.264,
+    "z": 0.968,
+    "magnitude": 1.134,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T09:16:33.952702",
+    "x": -0.422,
+    "y": -0.01,
+    "z": 1.193,
+    "magnitude": 1.266,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T09:16:34.459092",
+    "x": -0.315,
+    "y": 0.053,
+    "z": 0.873,
+    "magnitude": 0.93,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T09:16:34.971797",
+    "x": 0.376,
+    "y": -0.259,
+    "z": 1.165,
+    "magnitude": 1.251,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T09:21:33.583215",
+    "x": 0.418,
+    "y": 0.223,
+    "z": 1.019,
+    "magnitude": 1.124,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T09:21:34.117909",
+    "x": 0.525,
+    "y": 0.286,
+    "z": 0.97,
+    "magnitude": 1.139,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T09:21:34.628616",
+    "x": -0.037,
+    "y": 0.022,
+    "z": 1.022,
+    "magnitude": 1.023,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T09:32:32.260182",
+    "x": -0.113,
+    "y": 0.408,
+    "z": 1.122,
+    "magnitude": 1.199,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T09:32:32.853843",
+    "x": -0.295,
+    "y": -0.393,
+    "z": 0.754,
+    "magnitude": 0.901,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T09:32:33.360559",
+    "x": 0.183,
+    "y": -0.31,
+    "z": 0.976,
+    "magnitude": 1.04,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T09:37:53.827246",
+    "x": 0.27,
+    "y": -0.32,
+    "z": 0.717,
+    "magnitude": 0.83,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T09:37:54.372933",
+    "x": -0.102,
+    "y": 0.063,
+    "z": 0.945,
+    "magnitude": 0.952,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T09:37:54.882651",
+    "x": 0.088,
+    "y": -0.344,
+    "z": 0.931,
+    "magnitude": 0.997,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-19T09:37:55.391059",
+    "x": 0.048,
+    "y": 0.217,
+    "z": 1.333,
+    "magnitude": 1.351,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
   }
 ]
