@@ -1,0 +1,11 @@
+flask
+streamlit
+pandas
+requests
+datetime
+nltk
+scikit-learn
+textblob
+matplotlib
+plotly
+sqlite3-binary
