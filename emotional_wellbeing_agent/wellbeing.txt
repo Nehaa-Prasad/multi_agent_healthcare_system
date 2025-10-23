@@ -1,0 +1,8 @@
+[happy] Share your happiness with someone you love.
+[happy] Celebrate small achievements today.
+[sad] Try slow breathing: inhale 4s, hold 4s, exhale 4s.
+[sad] Talking to a friend or journaling can help.
+[anxious] List 5 things you can see, 4 you can touch, 3 you can hear.
+[angry] Take a short walk or listen to calming music.
+[lonely] Reach out to a friend or family member.
+[neutral] Go for a mindful walk or drink a cup of tea.
