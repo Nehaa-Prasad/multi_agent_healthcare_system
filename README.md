@@ -28,6 +28,7 @@ pip install -r requirements.txt
 ---
 
 ## ⚙️ Project Structure
+```
 multi_agent_healthcare_system/
 │
 ├── cognitive_health_agent
@@ -53,6 +54,7 @@ multi_agent_healthcare_system/
 ├── reminder_db.sqlite
 ├── requirements.txt
 └── README.md
+```
 
 ---
 
