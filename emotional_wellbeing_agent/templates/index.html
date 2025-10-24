@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Emotional Well-being Agent</title>
+<style>
+body{font-family:Arial,sans-serif} 
+#chat{border:1px solid #aaa;padding:10px;height:300px;overflow-y:scroll;margin-bottom:10px}
+.user{color:blue;margin:5px 0} 
+.bot{color:green;margin:5px 0}
+</style>
+</head>
+<body>
+<h2>Emotional Well-being Agent</h2>
+<div id="chat"></div>
+<input id="entry" placeholder="Type your answer..." />
+<button id="send">Send</button>
+<button id="mic">🎤 Speak</button>
+<button id="finish">Finish & Get JSON</button>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+const socket = io();
+const chat = document.getElementById("chat");
+const entry = document.getElementById("entry");
+const sendBtn = document.getElementById("send");
+const micBtn = document.getElementById("mic");
+const finishBtn = document.getElementById("finish");
+
+function append(text,who){
+    const div=document.createElement("div");
+    div.textContent=text;
+    div.className=who;
+    chat.appendChild(div);
+    chat.scrollTop=chat.scrollHeight;
+    if(who==="bot") speak(text);
+}
+
+// --- Send message ---
+sendBtn.onclick = ()=>{
+    const msg=entry.value.trim();
+    if(msg){
+        append(msg,"user");
+        socket.emit("user_message",{message:msg});
+        entry.value="";
+    }
+};
+
+// --- Receive bot message ---
+socket.on("bot_message",data=>{
+    append(data.reply,"bot");
+});
+
+// --- Finish session ---
+finishBtn.onclick = ()=>{
+    socket.emit("finish_session");
+};
+
+// --- Receive session JSON ---
+socket.on("session_finished",data=>{
+    append(data.summary_text,"bot");
+    const blob = new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href=url;
+    a.download="session_result.json";
+    a.click();
+});
+
+// --- Voice input ---
+let recognition;
+if("webkitSpeechRecognition" in window){
+    recognition = new webkitSpeechRecognition();
+    recognition.continuous=false;
+    recognition.interimResults=false;
+    recognition.lang="en-US";
+    recognition.onresult=function(event){
+        const text=event.results[0][0].transcript;
+        entry.value=text;
+        sendBtn.click();
+    }
+}
+micBtn.onclick=()=>{ if(recognition) recognition.start(); };
+
+// --- Text-to-speech ---
+function speak(text){
+    if("speechSynthesis" in window){
+        speechSynthesis.cancel();
+        const utter=new SpeechSynthesisUtterance(text);
+        utter.rate=1; utter.pitch=1; utter.lang="en-US";
+        speechSynthesis.speak(utter);
+    }
+}
+</script>
+</body>
+</html>

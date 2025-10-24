@@ -10,12 +10,13 @@ st.set_page_config(page_title="Multi-Agent Healthcare Dashboard", layout="wide")
 st.title("🏥 Multi-Agent Healthcare System")
 
 # --- Tabs ---
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6= st.tabs([
     "Health Monitoring", 
     "Fall Detection", 
     "Reminders", 
     "Emergency Alerts", 
-    "Cognitive Chatbot"
+    "Cognitive Chatbot",
+    "Emotional Wellbeing"
 ])
 
 # --- Helper to load JSON safely ---
@@ -87,3 +88,17 @@ with tab5:
             st.success("Chatbot launched successfully!")
         except Exception as e:
             st.error(f"Error launching chatbot: {e}")
+
+# --- 6️⃣ Emotional Wellbeing Agent Tab ---
+with tab6:
+    st.header("🧘‍♀️ Emotional Wellbeing Agent")
+    st.write("Chat with an agent that understands your emotions and gives supportive wellbeing tips.")
+
+    if st.button("💬 Launch Wellbeing Agent"):
+        try:
+            subprocess.Popen(["python", "emotional_wellbeing_agent/app.py"])
+            time.sleep(2)
+            webbrowser.open_new_tab("http://127.0.0.1:5000")  # use whatever port your agent runs on
+            st.success("Emotional Wellbeing Agent launched successfully!")
+        except Exception as e:
+            st.error(f"Error launching wellbeing agent: {e}")

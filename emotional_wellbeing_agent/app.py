@@ -43,7 +43,7 @@ KNOWLEDGE_FILE = "knowledge/wellbeing_tips.txt"
 def load_knowledge():
     if not os.path.exists(KNOWLEDGE_FILE):
         return []
-    with open(KNOWLEDGE_FILE,"r",encoding="utf-8",errors="ignore") as f:
+    with open(KNOWLEDGE_FILE,"r",encoding="utf-8") as f:
         return [line.strip() for line in f if line.strip()]
 WELLBEING_TIPS = load_knowledge()
 

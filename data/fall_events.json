@@ -314,5 +314,113 @@
     "magnitude": 1.351,
     "activity": "NORMAL",
     "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-24T20:25:36.026721",
+    "x": 0.262,
+    "y": -0.253,
+    "z": 0.76,
+    "magnitude": 0.843,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-24T20:25:36.561362",
+    "x": -0.297,
+    "y": -0.5,
+    "z": 0.963,
+    "magnitude": 1.125,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-24T20:25:37.079064",
+    "x": 0.198,
+    "y": 0.048,
+    "z": 0.878,
+    "magnitude": 0.901,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-24T20:25:37.601956",
+    "x": 0.371,
+    "y": -0.349,
+    "z": 0.99,
+    "magnitude": 1.113,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-24T20:25:38.108468",
+    "x": -0.26,
+    "y": -0.381,
+    "z": 1.071,
+    "magnitude": 1.166,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-24T20:25:38.619645",
+    "x": -0.207,
+    "y": -0.461,
+    "z": 0.804,
+    "magnitude": 0.949,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-24T20:25:39.127508",
+    "x": -0.06,
+    "y": 0.052,
+    "z": 0.878,
+    "magnitude": 0.881,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-24T20:25:39.637120",
+    "x": -0.092,
+    "y": -0.308,
+    "z": 0.677,
+    "magnitude": 0.749,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-24T20:25:40.146047",
+    "x": 0.482,
+    "y": 0.272,
+    "z": 1.26,
+    "magnitude": 1.376,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-24T20:25:40.656992",
+    "x": -0.039,
+    "y": -0.011,
+    "z": 0.961,
+    "magnitude": 0.962,
+    "activity": "INACTIVE",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-24T20:25:41.167177",
+    "x": -0.462,
+    "y": 0.49,
+    "z": 0.701,
+    "magnitude": 0.972,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-24T20:25:41.681187",
+    "x": 0.206,
+    "y": 0.193,
+    "z": 0.736,
+    "magnitude": 0.788,
+    "activity": "NORMAL",
+    "device_id": "fall_sensor_001"
   }
 ]

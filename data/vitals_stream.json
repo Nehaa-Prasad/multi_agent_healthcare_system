@@ -280,5 +280,65 @@
     "temperature": 36.3,
     "respiratory_rate": 16,
     "device_id": "health_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-24T20:25:36.015728",
+    "heart_rate": 83,
+    "bp_systolic": 91,
+    "bp_diastolic": 77,
+    "oxygen_saturation": 97.3,
+    "temperature": 36.6,
+    "respiratory_rate": 17,
+    "device_id": "health_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-24T20:25:37.073068",
+    "heart_rate": 66,
+    "bp_systolic": 125,
+    "bp_diastolic": 72,
+    "oxygen_saturation": 99.9,
+    "temperature": 36.4,
+    "respiratory_rate": 16,
+    "device_id": "health_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-24T20:25:38.103471",
+    "heart_rate": 99,
+    "bp_systolic": 131,
+    "bp_diastolic": 91,
+    "oxygen_saturation": 98.3,
+    "temperature": 36.8,
+    "respiratory_rate": 19,
+    "device_id": "health_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-24T20:25:39.118513",
+    "heart_rate": 91,
+    "bp_systolic": 115,
+    "bp_diastolic": 73,
+    "oxygen_saturation": 99.2,
+    "temperature": 36.8,
+    "respiratory_rate": 11,
+    "device_id": "health_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-24T20:25:40.125058",
+    "heart_rate": 68,
+    "bp_systolic": 110,
+    "bp_diastolic": 67,
+    "oxygen_saturation": 98.8,
+    "temperature": 36.3,
+    "respiratory_rate": 17,
+    "device_id": "health_sensor_001"
+  },
+  {
+    "timestamp": "2025-10-24T20:25:41.134191",
+    "heart_rate": 84,
+    "bp_systolic": 122,
+    "bp_diastolic": 95,
+    "oxygen_saturation": 97.7,
+    "temperature": 36.1,
+    "respiratory_rate": 11,
+    "device_id": "health_sensor_001"
   }
 ]
