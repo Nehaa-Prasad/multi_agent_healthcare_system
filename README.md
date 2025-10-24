@@ -108,7 +108,9 @@ The Streamlit dashboard provides:
 
 ## ▶️ How to Run the Project
 Run the main dashboard (no need to start agents separately):
+```bash
 streamlit run streamlit_dashboard.py
+```
 Once started, open the link shown in the terminal (usually http://localhost:8501).
 
 ---
