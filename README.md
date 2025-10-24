@@ -1,11 +1,15 @@
-🩺 Multi-Agent Healthcare System
-A smart multi-agent healthcare monitoring system designed to assist users with health tracking, reminders, and emotional support — all integrated into an interactive Streamlit dashboard.
+# 🩺 Multi-Agent Healthcare System  
 
+A **smart multi-agent healthcare monitoring system** designed to assist users with **health tracking, fall detection, reminders, cognitive health, and emotional wellbeing** — all integrated into an interactive **Streamlit dashboard**.
 
-🚀 Getting Started
-1️⃣ Clone the Repository
+---
+
+## 🚀 Getting Started  
+
+### 1️⃣ Clone the Repository  
+```bash
 git clone https://github.com/<your-username>/multi_agent_healthcare_system.git
-cd multi_agent_healthcare_system
+cd multi_agent_healthcare_system 
 
 2️⃣ Create and Activate a Virtual Environment
 python -m venv venv
