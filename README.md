@@ -112,12 +112,12 @@ Once started, open the link shown in the terminal (usually http://localhost:8501
 ---
 
 ## 🧩 Tech Stack
--Frontend/UI: Streamlit
--Backend: Flask
--Database: SQLite
--Language: Python
--Visualization: Matplotlib, Plotly
--AI/NLP: NLTK, TextBlob
+-**Frontend/UI: Streamlit**
+-**Backend: Flask**
+-**Database: SQLite**
+-**Language: Python**
+-**Visualization: Matplotlib, Plotly**
+-**AI/NLP: NLTK, TextBlob**
 
 ---
 
