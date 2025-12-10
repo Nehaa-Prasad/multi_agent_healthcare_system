@@ -6,8 +6,10 @@
 
 | File | What It Is | What To Do |
 |------|-----------|-----------|
-| `esp32_fall_detection_guide.md` | 📖 **Documentation** (this file) | **Read it** - explains how everything works |
-| `esp32_reader.py` | 🐍 **Actual Python code** | **Run this!** - connects ESP32 to your system |
+| `esp32_fall_detection_guide.md` | 📖 **Documentation** (this file) | **Read it** - explains fall + integration |
+| `esp32_pulse_guide.md` | 📖 Pulse sensor doc | **Read it** - heart-rate setup |
+| `esp32_reader.py` | 🐍 **Actual Python code** | **Run this!** - connects ESP32 fall sensor |
+| `pulse_reader.py` | 🐍 **Python code** | **Run this!** - connects ESP32 pulse sensor |
 
 ### **Simple Steps:**
 
