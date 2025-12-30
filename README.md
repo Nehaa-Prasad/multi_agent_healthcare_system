@@ -1,4 +1,4 @@
-# 🩺 Multi-Agent Healthcare System (Windows + IoT Setup)
+# 🩺 Multi-Agent Healthcare System (IoT Setup)
 
 A **smart multi-agent healthcare monitoring system** designed to assist users with **health tracking, fall detection, reminders, cognitive health, and emotional wellbeing**, integrated with **ESP32 IoT sensors** and visualized through an interactive **Streamlit dashboard**.
 
