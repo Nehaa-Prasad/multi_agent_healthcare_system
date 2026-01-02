@@ -6,7 +6,7 @@ from flask import Flask, jsonify, render_template, redirect
 # -----------------------------
 # Agents Imports
 # -----------------------------
-from reminder_agent.reminder_agent import add_sample_reminders, get_all_reminders, check_reminders
+from multi_agent_healthcare_system.data.reminder_agent import add_sample_reminders, get_all_reminders, check_reminders
 from emergency_agent.emergency_agent import detect_emergency
 from health_monitoring_agent.health_monitor_agent import monitor_health
 from health_monitoring_agent.health_simulator import HealthDataSimulator

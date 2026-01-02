@@ -24,8 +24,8 @@ const int SAMPLE_RATE = 10;    // ms between samples (100 Hz)
 const int WINDOW_MS = 10000;   // Rolling window for BPM (10 seconds)
 
 // Peak detection thresholds (tune for your sensor)
-const int THRESHOLD_HIGH = 520;  // Adjust based on your sensor/noise
-const int THRESHOLD_LOW  = 500;  // Hysteresis to avoid double-counting
+const int THRESHOLD_HIGH = 50;  // Adjust based on your sensor/noise
+const int THRESHOLD_LOW  = 10;  // Hysteresis to avoid double-counting
 
 unsigned long lastSample = 0;
 unsigned long windowStart = 0;

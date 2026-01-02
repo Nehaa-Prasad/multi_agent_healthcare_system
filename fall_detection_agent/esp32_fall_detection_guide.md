@@ -58,289 +58,257 @@ Negative →  GND
  * Compatible with ESP32 DevKit
  */
 
+// esp32_combined_fixed.ino
 #include <Wire.h>
-#include <WiFi.h>
+#include <math.h>
 
-// MPU6050 I2C Address
-#define MPU6050_ADDR 0x68
+// ---------------- MPU6050 DEFINITIONS ----------------
+#define MPU6050_ADDR          0x68
+#define MPU6050_ACCEL_XOUT_H  0x3B
+#define MPU6050_PWR_MGMT_1    0x6B
+#define MPU6050_SMPLRT_DIV    0x19
+#define MPU6050_CONFIG        0x1A
+#define MPU6050_ACCEL_CONFIG  0x1C
 
-// MPU6050 Register Addresses
-#define MPU6050_ACCEL_XOUT_H 0x3B
-#define MPU6050_PWR_MGMT_1   0x6B
-#define MPU6050_SMPLRT_DIV   0x19
-#define MPU6050_CONFIG       0x1A
-#define MPU6050_GYRO_CONFIG  0x1B
-#define MPU6050_ACCEL_CONFIG 0x1C
+// ---------------- PIN DEFINITIONS ----------------
+#define SDA_PIN     21
+#define SCL_PIN     22
+#define BUZZER_PIN  2
+#define PULSE_PIN   34   // ADC input only (ESP32)
 
-// Buzzer Pin (Optional)
-#define BUZZER_PIN 2
+// ---------------- TIMINGS ----------------
+const unsigned long MPU_SAMPLE_MS = 3000;
+const unsigned long BPM_WINDOW_MS = 10000;
+const unsigned long MPU_RETRY_MS  = 5000;
 
-// Fall Detection Thresholds
-#define FALL_THRESHOLD 2.5      // g-force above this indicates potential fall
-#define IMPACT_THRESHOLD 3.0    // g-force above this indicates impact
-#define FREE_FALL_THRESHOLD 0.3 // g-force below this indicates free fall
-#define SAMPLING_RATE 100       // Check every 100ms
+// ---------------- FALL THRESHOLDS ----------------
+const float FALL_THRESHOLD       = 2.5;
+const float IMPACT_THRESHOLD     = 3.0;
+const float FREE_FALL_THRESHOLD  = 0.3;
 
-// Variables
-unsigned long lastCheck = 0;
-float accelX, accelY, accelZ;
-float gyroX, gyroY, gyroZ;
-float magnitude;
-bool fallDetected = false;
-unsigned long fallTime = 0;
-
-// Moving average for smoothing
-float accelX_avg = 0, accelY_avg = 0, accelZ_avg = 0;
+// ---------------- MOVING AVERAGE ----------------
 const int AVG_SIZE = 5;
-float accelX_buffer[AVG_SIZE] = {0};
-float accelY_buffer[AVG_SIZE] = {0};
-float accelZ_buffer[AVG_SIZE] = {0};
-int buffer_index = 0;
+float ax_buf[AVG_SIZE] = {0}, ay_buf[AVG_SIZE] = {0}, az_buf[AVG_SIZE] = {0};
+int buf_idx = 0;
 
+// ---------------- GLOBAL STATE ----------------
+float accelX = 0, accelY = 0, accelZ = 0;
+float magnitude = 0;
+bool fallDetected = false;
+bool mpuPresent = false;
+
+unsigned long lastMpuSample = 0;
+unsigned long lastMpuTry = 0;
+
+// ---------------- PULSE SENSOR ----------------
+unsigned long lastSample = 0;
+unsigned long bpmWindowStart = 0;
+int beatCount = 0;
+bool beatInProgress = false;
+int rawSignal = 0;
+
+const unsigned long SAMPLE_MS = 10;
+const int THRESHOLD_HIGH = 520;
+const int THRESHOLD_LOW  = 500;
+
+// ---------------- FUNCTION DECLARATIONS ----------------
+void setupMPU();
+bool readMPU();
+bool detectFall();
+void triggerFallAlert();
+void sendJSONtoSerial(float bpm);
+
+// ================== SETUP ==================
 void setup() {
   Serial.begin(115200);
-  Wire.begin();
-  
-  // Initialize buzzer pin
+
+  // IMPORTANT FIX: Explicit I2C pins
+  Wire.begin(SDA_PIN, SCL_PIN);
+  delay(100);
+
   pinMode(BUZZER_PIN, OUTPUT);
   digitalWrite(BUZZER_PIN, LOW);
-  
-  // Initialize MPU6050
-  initMPU6050();
-  
-  Serial.println("ESP32 Fall Detection System Started");
-  Serial.println("Monitoring for falls...");
-  delay(1000);
+
+  analogReadResolution(12);
+  analogSetAttenuation(ADC_11db);
+
+  bpmWindowStart = millis();
+
+  setupMPU();
+
+  Serial.println("ESP32 combined sensor started");
 }
 
+// ================== LOOP ==================
 void loop() {
-  unsigned long currentMillis = millis();
-  
-  // Read accelerometer data every SAMPLING_RATE milliseconds
-  if (currentMillis - lastCheck >= SAMPLING_RATE) {
-    lastCheck = currentMillis;
-    
-    // Read MPU6050 data
-    readMPU6050();
-    
-    // Calculate magnitude
-    magnitude = sqrt(accelX * accelX + accelY * accelY + accelZ * accelZ);
-    
-    // Detect fall patterns
-    if (detectFall()) {
-      triggerFallAlert();
-    }
-    
-    // Send data to serial port (Python will read this)
-    sendDataToSerial();
-    
-    // Reset fall flag after 5 seconds
-    if (fallDetected && (currentMillis - fallTime > 5000)) {
-      fallDetected = false;
+  unsigned long now = millis();
+
+  // ----- MPU SAMPLE -----
+  if (now - lastMpuSample >= MPU_SAMPLE_MS) {
+    lastMpuSample = now;
+
+    if (!mpuPresent) {
+      if (now - lastMpuTry >= MPU_RETRY_MS) {
+        lastMpuTry = now;
+        setupMPU();
+      }
+      magnitude = 0;
+    } else {
+      if (!readMPU()) {
+        mpuPresent = false;
+        magnitude = 0;
+      } else {
+        magnitude = sqrt(accelX*accelX + accelY*accelY + accelZ*accelZ);
+        if (detectFall()) triggerFallAlert();
+      }
     }
   }
+
+  // ----- PULSE SENSOR SAMPLE -----
+  if (now - lastSample >= SAMPLE_MS) {
+    lastSample = now;
+    rawSignal = analogRead(PULSE_PIN);
+
+    if (!beatInProgress && rawSignal > THRESHOLD_HIGH) {
+      beatInProgress = true;
+      beatCount++;
+    } else if (beatInProgress && rawSignal < THRESHOLD_LOW) {
+      beatInProgress = false;
+    }
+  }
+
+  // ----- BPM CALCULATION -----
+  if (now - bpmWindowStart >= BPM_WINDOW_MS) {
+    float bpm = (beatCount * 60000.0) / (now - bpmWindowStart);
+    sendJSONtoSerial(bpm);
+    beatCount = 0;
+    bpmWindowStart = now;
+  }
+
+  delay(1);
 }
 
-// Initialize MPU6050
-void initMPU6050() {
+// ================== MPU FUNCTIONS ==================
+
+void setupMPU() {
+  Wire.beginTransmission(MPU6050_ADDR);
+  if (Wire.endTransmission() != 0) {
+    Serial.println("MPU6050 not found on bus (setup).");
+    mpuPresent = false;
+    return;
+  }
+
   Wire.beginTransmission(MPU6050_ADDR);
   Wire.write(MPU6050_PWR_MGMT_1);
-  Wire.write(0x00); // Wake up MPU6050
+  Wire.write(0x00);
   Wire.endTransmission();
-  
-  // Configure accelerometer range (±2g)
+
   Wire.beginTransmission(MPU6050_ADDR);
   Wire.write(MPU6050_ACCEL_CONFIG);
-  Wire.write(0x00); // ±2g range
+  Wire.write(0x00);
   Wire.endTransmission();
-  
-  // Configure sample rate (1kHz)
+
   Wire.beginTransmission(MPU6050_ADDR);
   Wire.write(MPU6050_SMPLRT_DIV);
-  Wire.write(0x07); // 1kHz sample rate
+  Wire.write(0x07);
   Wire.endTransmission();
-  
-  // Configure DLPF (Digital Low Pass Filter)
+
   Wire.beginTransmission(MPU6050_ADDR);
   Wire.write(MPU6050_CONFIG);
-  Wire.write(0x06); // 5Hz DLPF
+  Wire.write(0x06);
   Wire.endTransmission();
-  
-  delay(100);
+
+  for (int i = 0; i < AVG_SIZE; i++) {
+    ax_buf[i] = ay_buf[i] = az_buf[i] = 0;
+  }
+  buf_idx = 0;
+
+  mpuPresent = true;
   Serial.println("MPU6050 initialized");
 }
 
-// Read MPU6050 accelerometer and gyroscope data
-void readMPU6050() {
+bool readMPU() {
   Wire.beginTransmission(MPU6050_ADDR);
   Wire.write(MPU6050_ACCEL_XOUT_H);
-  Wire.endTransmission(false);
+  if (Wire.endTransmission(false) != 0) return false;
+
   Wire.requestFrom(MPU6050_ADDR, 14, true);
-  
-  // Read accelerometer data (16-bit values)
-  int16_t accelX_raw = (Wire.read() << 8 | Wire.read());
-  int16_t accelY_raw = (Wire.read() << 8 | Wire.read());
-  int16_t accelZ_raw = (Wire.read() << 8 | Wire.read());
-  Wire.read(); // Skip temperature
-  int16_t gyroX_raw = (Wire.read() << 8 | Wire.read());
-  int16_t gyroY_raw = (Wire.read() << 8 | Wire.read());
-  int16_t gyroZ_raw = (Wire.read() << 8 | Wire.read());
-  
-  // Convert to g-force (for ±2g range: divide by 16384)
-  accelX = accelX_raw / 16384.0;
-  accelY = accelY_raw / 16384.0;
-  accelZ = accelZ_raw / 16384.0;
-  
-  // Convert gyro to degrees per second (for ±250°/s range: divide by 131)
-  gyroX = gyroX_raw / 131.0;
-  gyroY = gyroY_raw / 131.0;
-  gyroZ = gyroZ_raw / 131.0;
-  
-  // Apply moving average filter for smoothing
-  accelX_buffer[buffer_index] = accelX;
-  accelY_buffer[buffer_index] = accelY;
-  accelZ_buffer[buffer_index] = accelZ;
-  buffer_index = (buffer_index + 1) % AVG_SIZE;
-  
-  // Calculate average
-  accelX_avg = 0;
-  accelY_avg = 0;
-  accelZ_avg = 0;
+  if (Wire.available() < 14) return false;
+
+  int16_t ax = (Wire.read() << 8) | Wire.read();
+  int16_t ay = (Wire.read() << 8) | Wire.read();
+  int16_t az = (Wire.read() << 8) | Wire.read();
+  Wire.read(); Wire.read(); // temp
+  Wire.read(); Wire.read(); // gyro x
+  Wire.read(); Wire.read(); // gyro y
+  Wire.read(); Wire.read(); // gyro z
+
+  float rawAx = ax / 16384.0;
+  float rawAy = ay / 16384.0;
+  float rawAz = az / 16384.0;
+
+  ax_buf[buf_idx] = rawAx;
+  ay_buf[buf_idx] = rawAy;
+  az_buf[buf_idx] = rawAz;
+  buf_idx = (buf_idx + 1) % AVG_SIZE;
+
+  float sx = 0, sy = 0, sz = 0;
   for (int i = 0; i < AVG_SIZE; i++) {
-    accelX_avg += accelX_buffer[i];
-    accelY_avg += accelY_buffer[i];
-    accelZ_avg += accelZ_buffer[i];
+    sx += ax_buf[i];
+    sy += ay_buf[i];
+    sz += az_buf[i];
   }
-  accelX_avg /= AVG_SIZE;
-  accelY_avg /= AVG_SIZE;
-  accelZ_avg /= AVG_SIZE;
-  
-  // Use smoothed values
-  accelX = accelX_avg;
-  accelY = accelY_avg;
-  accelZ = accelZ_avg;
+
+  accelX = sx / AVG_SIZE;
+  accelY = sy / AVG_SIZE;
+  accelZ = sz / AVG_SIZE;
+
+  return true;
 }
 
-// Detect fall based on acceleration patterns
 bool detectFall() {
-  // Pattern 1: High impact (sudden stop after fall)
-  if (magnitude > IMPACT_THRESHOLD) {
-    return true;
-  }
-  
-  // Pattern 2: Free fall detection (low acceleration in all axes)
-  if (abs(accelX) < FREE_FALL_THRESHOLD && 
-      abs(accelY) < FREE_FALL_THRESHOLD && 
-      abs(accelZ) < FREE_FALL_THRESHOLD) {
-    return true;
-  }
-  
-  // Pattern 3: Sudden change in acceleration (fall threshold)
-  if (magnitude > FALL_THRESHOLD) {
-    // Check if this is a sudden spike (not just normal movement)
-    static float prev_magnitude = 0;
-    float change = abs(magnitude - prev_magnitude);
-    prev_magnitude = magnitude;
-    
-    if (change > 1.5) { // Sudden change > 1.5g
-      return true;
-    }
-  }
-  
+  if (magnitude > IMPACT_THRESHOLD) return true;
+
+  if (fabs(accelX) < FREE_FALL_THRESHOLD &&
+      fabs(accelY) < FREE_FALL_THRESHOLD &&
+      fabs(accelZ) < FREE_FALL_THRESHOLD) return true;
+
+  static float prevMag = 0;
+  float diff = fabs(magnitude - prevMag);
+  prevMag = magnitude;
+
+  if (magnitude > FALL_THRESHOLD && diff > 1.5) return true;
+
   return false;
 }
 
-// Trigger fall alert
 void triggerFallAlert() {
-  if (!fallDetected) {
-    fallDetected = true;
-    fallTime = millis();
-    
-    // Visual/Audio alert
-    for (int i = 0; i < 3; i++) {
-      digitalWrite(BUZZER_PIN, HIGH);
-      delay(200);
-      digitalWrite(BUZZER_PIN, LOW);
-      delay(200);
-    }
-    
-    Serial.println("FALL_DETECTED: Person has fallen!");
+  if (fallDetected) return;
+
+  fallDetected = true;
+  for (int i = 0; i < 3; i++) {
+    digitalWrite(BUZZER_PIN, HIGH);
+    delay(150);
+    digitalWrite(BUZZER_PIN, LOW);
+    delay(150);
   }
+  Serial.println("FALL_DETECTED");
 }
 
-// Send data to Python via Serial
-void sendDataToSerial() {
-  unsigned long timestamp = millis();
-  
-  // Determine activity type
-  String activity = "NORMAL";
-  String alert_level = "NONE";
-  
-  if (magnitude > IMPACT_THRESHOLD) {
-    activity = "FALL_IMPACT";
-    alert_level = "HIGH";
-  } else if (magnitude > FALL_THRESHOLD) {
-    activity = "FALL_DROP";
-    alert_level = "MEDIUM";
-  } else if (magnitude < FREE_FALL_THRESHOLD) {
-    activity = "FREE_FALL";
-    alert_level = "HIGH";
-  }
-  
-  // Send JSON format for Python
-  Serial.print("{");
-  Serial.print("\"timestamp\":");
-  Serial.print(timestamp);
-  Serial.print(",\"x\":");
-  Serial.print(accelX, 3);
-  Serial.print(",\"y\":");
-  Serial.print(accelY, 3);
-  Serial.print(",\"z\":");
-  Serial.print(accelZ, 3);
-  Serial.print(",\"magnitude\":");
-  Serial.print(magnitude, 3);
-  Serial.print(",\"activity\":\"");
-  Serial.print(activity);
-  Serial.print("\",\"fall_detected\":");
-  Serial.print(fallDetected ? "true" : "false");
-  Serial.print(",\"alert_level\":\"");
-  Serial.print(alert_level);
-  Serial.print("\",\"device_id\":\"esp32_fall_sensor_001\"");
+// ================== SERIAL JSON ==================
+
+void sendJSONtoSerial(float bpm) {
+  Serial.print("{\"timestamp\":"); Serial.print(millis());
+  Serial.print(",\"x\":"); Serial.print(accelX, 3);
+  Serial.print(",\"y\":"); Serial.print(accelY, 3);
+  Serial.print(",\"z\":"); Serial.print(accelZ, 3);
+  Serial.print(",\"magnitude\":"); Serial.print(magnitude, 3);
+  Serial.print(",\"fall_detected\":"); Serial.print(fallDetected ? "true" : "false");
+  Serial.print(",\"bpm\":"); Serial.print(bpm, 1);
+  Serial.print(",\"pulse_raw\":"); Serial.print(rawSignal);
   Serial.println("}");
 }
 
-// Optional: WiFi connection for remote monitoring
-void connectWiFi(const char* ssid, const char* password) {
-  WiFi.begin(ssid, password);
-  Serial.print("Connecting to WiFi");
-  
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  
-  Serial.println();
-  Serial.print("WiFi connected. IP: ");
-  Serial.println(WiFi.localIP());
-}
-```
-
-## Python Integration Code
-
-> **📝 IMPORTANT:** The code below is just an **example** to show you how it works. 
-> 
-> **✅ ACTUAL FILE TO USE:** We already created `esp32_reader.py` for you! 
-> 
-> **👉 Just use that file - you don't need to copy this code!**
-
-**Example code (for reference only):**
-
-```python
-import serial
-import json
-import time
-import os
-from datetime import datetime
 
 # ESP32 connection (change COM port to match your ESP32)
 # Windows: COM3, COM4, etc.

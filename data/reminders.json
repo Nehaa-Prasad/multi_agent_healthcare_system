@@ -1,16 +1,19 @@
 {
-    "reminders": [
-        {
-            "message": "Take morning medicine",
-            "time": "2025-10-19T08:00:00"
-        },
-        {
-            "message": "Check blood pressure",
-            "time": "2025-10-19T14:00:00"
-        },
-        {
-            "message": "Drink water",
-            "time": "2025-10-19T16:00:00"
-        }
-    ]
+  "reminders": [
+    {
+      "title": "Take Medicine",
+      "description": "Paracetamol 500mg",
+      "time": "2025-12-11 14:30"
+    },
+    {
+      "title": "Drink Water",
+      "description": "250 ml water",
+      "time": "2025-12-11 14:45"
+    },
+    {
+      "title": "Evening Walk",
+      "description": "15 minute walk",
+      "time": "2025-12-11 18:00"
+    }
+  ]
 }
