@@ -4,10 +4,9 @@ esp32_writer_full.py
 
 Serial JSON saver for ESP32:
  - IMU / fall records -> data/readings.ndjson & data/fall_events.json
- - Pulse / vitals     -> data/vitals_stream.json (single JSON array, trimmed)
+ - Pulse / vitals     -> data/vitals_stream.json
 
-Behavior:
- - If an incoming JSON object contains both vitals and IMU keys, it is saved into BOTH files.
+Adds emergency / critical tagging so Emergency Agent can react.
 """
 
 import serial
@@ -18,33 +17,32 @@ import os
 from datetime import datetime
 
 # ---------------- CONFIG ----------------
-ESP32_PORT = "/dev/cu.SLAB_USBtoUART"               # set to "/dev/cu.SLAB_USBtoUART" to force, else None to auto-detect
+ESP32_PORT = "/dev/cu.SLAB_USBtoUART"   # set None to auto-detect
 BAUD_RATE = 115200
 DATA_DIR = "data"
 
-# FALL / IMU files
 FALL_NDJSON = os.path.join(DATA_DIR, "readings.ndjson")
 FALL_JSON_ARR = os.path.join(DATA_DIR, "fall_events.json")
-
-# VITALS file (pulse)
 VITALS_JSON = os.path.join(DATA_DIR, "vitals_stream.json")
 
 MAX_RECORDS = 1000
-SERIAL_TIMEOUT = 1  # seconds
+SERIAL_TIMEOUT = 1
 
-# Ensure base data directory exists
+# -------- CRITICAL THRESHOLDS (IMPORTANT) --------
+CRITICAL_BPM_HIGH = 120
+CRITICAL_BPM_LOW  = 45
+CRITICAL_IMPACT   = 3.0
+
 os.makedirs(DATA_DIR, exist_ok=True)
 
-# ---------------- utility functions ----------------
+# ---------------- utility ----------------
 def find_port():
     ports = list(serial.tools.list_ports.comports())
     if not ports:
         return None
-    prefer_keys = ("SLAB", "CP210", "CH340", "FTDI", "USB")
+    prefer = ("SLAB", "CP210", "CH340", "FTDI", "USB")
     for p in ports:
-        name = (p.device or "").upper()
-        desc = (p.description or "").upper()
-        if any(k in name or k in desc for k in prefer_keys):
+        if any(k in (p.device + p.description).upper() for k in prefer):
             return p.device
     return ports[0].device
 
@@ -52,18 +50,15 @@ def open_serial(port):
     try:
         ser = serial.Serial(port, BAUD_RATE, timeout=SERIAL_TIMEOUT)
         time.sleep(2)
-        print(f"✅ Serial open: {port} @ {BAUD_RATE}")
+        print(f"✅ Serial open: {port}")
         return ser
     except Exception as e:
-        print("❌ Failed to open serial:", e)
+        print("❌ Serial open failed:", e)
         return None
 
 def append_ndjson(path, obj):
-    try:
-        with open(path, "a", encoding="utf-8") as f:
-            f.write(json.dumps(obj, ensure_ascii=False) + "\n")
-    except Exception as e:
-        print(f"❌ NDJSON append error ({path}):", e)
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(obj, ensure_ascii=False) + "\n")
 
 def load_json_array(path):
     if not os.path.exists(path):
@@ -71,215 +66,147 @@ def load_json_array(path):
     try:
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
-    except Exception as e:
-        # corrupted or empty file
-        print(f"⚠️ Could not load JSON array ({path}): {e}")
+    except:
         return []
 
 def write_json_array(path, arr):
-    try:
-        tmp = path + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(arr, f, indent=2, ensure_ascii=False)
-        os.replace(tmp, path)
-        print(f"💾 Wrote {len(arr)} records -> {path}")
-    except Exception as e:
-        print(f"❌ write_json_array error ({path}):", e)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(arr, f, indent=2, ensure_ascii=False)
+    os.replace(tmp, path)
 
-# ---------------- save functions ----------------
+# ---------------- SAVE FUNCTIONS ----------------
 def save_fall_record(obj):
-    try:
-        # Optionally create a shallow copy if you want to strip vitals from fall records:
-        # fall_obj = {k:v for k,v in obj.items() if k not in ("bpm","heart_rate","pulse","pulse_raw")}
-        # use fall_obj below instead of obj if you want to store without vitals fields.
-        obj.setdefault("device_id", "esp32_fall_sensor_001")
-        obj.setdefault("timestamp", datetime.utcnow().isoformat() + "Z")
-        obj["_received_at"] = datetime.utcnow().isoformat() + "Z"
+    obj.setdefault("device_id", "esp32_fall_sensor_001")
+    obj.setdefault("timestamp", datetime.utcnow().isoformat() + "Z")
+    obj["_received_at"] = datetime.utcnow().isoformat() + "Z"
 
-        append_ndjson(FALL_NDJSON, obj)
+    append_ndjson(FALL_NDJSON, obj)
 
-        arr = load_json_array(FALL_JSON_ARR)
-        arr.append(obj)
-        if len(arr) > MAX_RECORDS:
-            arr = arr[-MAX_RECORDS:]
-        write_json_array(FALL_JSON_ARR, arr)
-    except Exception as e:
-        print("❌ save_fall_record failed:", e)
+    arr = load_json_array(FALL_JSON_ARR)
+    arr.append(obj)
+    if len(arr) > MAX_RECORDS:
+        arr = arr[-MAX_RECORDS:]
+    write_json_array(FALL_JSON_ARR, arr)
 
 def save_vitals_record(obj):
-    try:
-        obj.setdefault("device_id", "esp32_pulse_001")
-        obj.setdefault("timestamp", datetime.utcnow().isoformat() + "Z")
-        obj["_received_at"] = datetime.utcnow().isoformat() + "Z"
+    obj.setdefault("device_id", "esp32_pulse_001")
+    obj.setdefault("timestamp", datetime.utcnow().isoformat() + "Z")
+    obj["_received_at"] = datetime.utcnow().isoformat() + "Z"
 
-        # Load existing vitals array
-        if os.path.exists(VITALS_JSON):
-            try:
-                with open(VITALS_JSON, "r", encoding="utf-8") as f:
-                    arr = json.load(f)
-            except Exception:
-                arr = []
-        else:
-            arr = []
+    arr = load_json_array(VITALS_JSON)
+    arr.append(obj)
+    if len(arr) > MAX_RECORDS:
+        arr = arr[-MAX_RECORDS:]
+    write_json_array(VITALS_JSON, arr)
 
-        arr.append(obj)
-        if len(arr) > MAX_RECORDS:
-            arr = arr[-MAX_RECORDS:]
-
-        tmp = VITALS_JSON + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(arr, f, indent=2, ensure_ascii=False)
-        os.replace(tmp, VITALS_JSON)
-        print(f"💾 Pulse saved -> {VITALS_JSON} (bpm={obj.get('bpm') or obj.get('heart_rate')})")
-    except Exception as e:
-        print("❌ save_vitals_record failed:", e)
-
-# ---------------- improved classify_and_save ----------------
+# ---------------- EMERGENCY CLASSIFICATION ----------------
 def classify_and_save(obj):
-    """
-    Save to:
-      - BOTH if object contains vitals + imu
-      - VITALS only if only vitals present
-      - FALL only if only imu present
-      - fallback to FALL
-    """
     has_vitals = any(k in obj for k in ("bpm", "pulse", "pulse_raw", "heart_rate"))
-    has_imu = ("magnitude" in obj) or (all(k in obj for k in ("x", "y", "z")))
+    has_imu = ("magnitude" in obj) or all(k in obj for k in ("x", "y", "z"))
 
+    # ---- CRITICAL DETECTION ----
+    critical = False
+    reasons = []
+
+    bpm = obj.get("bpm") or obj.get("heart_rate")
+    mag = obj.get("magnitude")
+
+    try:
+        if bpm is not None:
+            bpm = float(bpm)
+            if bpm > CRITICAL_BPM_HIGH or bpm < CRITICAL_BPM_LOW:
+                critical = True
+                reasons.append("ABNORMAL_HEART_RATE")
+    except:
+        pass
+
+    try:
+        if mag is not None:
+            mag = float(mag)
+            if mag >= CRITICAL_IMPACT:
+                critical = True
+                reasons.append("FALL_IMPACT")
+    except:
+        pass
+
+    # ---- ATTACH EMERGENCY METADATA ----
+    obj["is_critical"] = critical
+    obj["critical_reasons"] = reasons
+    obj["event_type"] = "EMERGENCY" if critical else "NORMAL"
+
+    # ---- SAVE ROUTING ----
     if has_vitals and has_imu:
-        # Save both. If you prefer fall record without bpm, uncomment the creation of fall_obj below.
-        try:
-            save_vitals_record(obj)
-        except Exception as e:
-            print("❌ save_vitals_record error (both):", e)
-        try:
-            # Optionally remove vitals fields from fall copy:
-            # fall_obj = {k:v for k,v in obj.items() if k not in ('bpm','pulse','pulse_raw','heart_rate')}
-            # save_fall_record(fall_obj)
-            save_fall_record(obj)
-        except Exception as e:
-            print("❌ save_fall_record error (both):", e)
+        save_vitals_record(obj)
+        save_fall_record(obj)
         return "both"
 
     if has_vitals:
-        try:
-            save_vitals_record(obj)
-        except Exception as e:
-            print("❌ save_vitals_record error:", e)
+        save_vitals_record(obj)
         return "vitals"
 
     if has_imu:
-        try:
-            save_fall_record(obj)
-        except Exception as e:
-            print("❌ save_fall_record error:", e)
+        save_fall_record(obj)
         return "fall"
 
-    # fallback default — save to fall to avoid losing data
-    try:
-        save_fall_record(obj)
-    except Exception as e:
-        print("❌ save_fall_record error (fallback):", e)
+    save_fall_record(obj)
     return "fall"
 
-# ---------------- parse helper ----------------
+# ---------------- JSON PARSER ----------------
 def try_parse_json_line(line):
     try:
         return json.loads(line)
-    except Exception:
+    except:
         return None
 
-# ---------------- main loop ----------------
+# ---------------- MAIN LOOP ----------------
 def main():
     port = ESP32_PORT or find_port()
     if not port:
-        print("No serial ports found. Set ESP32_PORT to the device path and retry.")
+        print("❌ No serial port found")
         return
 
     ser = open_serial(port)
     if not ser:
         return
 
-    print("Paths used:")
-    print(" - FALL NDJSON:", os.path.abspath(FALL_NDJSON))
-    print(" - FALL JSON :", os.path.abspath(FALL_JSON_ARR))
-    print(" - VITALS JSON:", os.path.abspath(VITALS_JSON))
-    print("Listening for JSON lines... Press Ctrl+C to stop.\n")
+    print("Listening for ESP32 JSON...\n")
 
-    total = 0
-    fall_count = 0
-    vitals_count = 0
-    both_count = 0
+    total = fall = vitals = both = 0
 
     try:
         while True:
-            try:
-                raw = ser.readline()
-            except Exception as e:
-                print("Serial read error:", e)
-                try:
-                    ser.close()
-                except:
-                    pass
-                time.sleep(2)
-                ser = open_serial(port)
-                if not ser:
-                    time.sleep(5)
-                    continue
-                else:
-                    continue
-
+            raw = ser.readline()
             if not raw:
-                time.sleep(0.02)
                 continue
 
-            try:
-                line = raw.decode("utf-8", errors="ignore").strip()
-            except Exception:
-                continue
-
-            if not line:
-                continue
-
+            line = raw.decode("utf-8", errors="ignore").strip()
             if not line.startswith("{"):
-                # skip non-json lines (optionally print)
-                # print("DBG:", line)
                 continue
 
             obj = try_parse_json_line(line)
             if not obj:
-                print("⚠️ Received invalid JSON:", line)
                 continue
 
             total += 1
             kind = classify_and_save(obj)
+
             if kind == "fall":
-                fall_count += 1
-                mag = obj.get("magnitude")
-                print(f"#{total} -> FALL ({fall_count}) mag={mag}")
+                fall += 1
+                print(f"#{total} FALL | mag={obj.get('magnitude')} | critical={obj['is_critical']}")
             elif kind == "vitals":
-                vitals_count += 1
-                bpm = obj.get("bpm") or obj.get("heart_rate")
-                print(f"#{total} -> VITALS ({vitals_count}) bpm={bpm}")
-            else:  # both
-                both_count += 1
-                mag = obj.get("magnitude")
-                bpm = obj.get("bpm") or obj.get("heart_rate")
-                print(f"#{total} -> BOTH ({both_count}) mag={mag} bpm={bpm}")
+                vitals += 1
+                print(f"#{total} VITALS | bpm={obj.get('bpm')} | critical={obj['is_critical']}")
+            else:
+                both += 1
+                print(f"#{total} BOTH | mag={obj.get('magnitude')} bpm={obj.get('bpm')} | critical={obj['is_critical']}")
 
     except KeyboardInterrupt:
         print("\nStopping...")
 
     finally:
-        try:
-            ser.close()
-        except:
-            pass
-        print(f"Processed: {total} records (fall={fall_count}, vitals={vitals_count}, both={both_count})")
-        print("Files written:")
-        print(" -", os.path.abspath(FALL_JSON_ARR))
-        print(" -", os.path.abspath(FALL_NDJSON))
-        print(" -", os.path.abspath(VITALS_JSON))
+        ser.close()
+        print(f"\nProcessed {total} records (fall={fall}, vitals={vitals}, both={both})")
 
 if __name__ == "__main__":
     main()
