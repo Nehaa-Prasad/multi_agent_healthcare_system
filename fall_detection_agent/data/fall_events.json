@@ -1,0 +1,49 @@
+[
+  {
+    "timestamp": 2760110,
+    "x": 0.927,
+    "y": 0.143,
+    "z": 0.504,
+    "magnitude": 1.065,
+    "fall_detected": true,
+    "bpm": 0.0,
+    "pulse_raw": 2989,
+    "is_critical": false,
+    "critical_reasons": [],
+    "event_type": "NORMAL",
+    "device_id": "esp32_pulse_001",
+    "_received_at": "2026-01-03T11:46:21.737428Z"
+  },
+  {
+    "timestamp": 10110,
+    "x": 0.619,
+    "y": -0.067,
+    "z": -0.009,
+    "magnitude": 0.622,
+    "fall_detected": true,
+    "bpm": 6.0,
+    "pulse_raw": 3082,
+    "is_critical": true,
+    "critical_reasons": [
+      "ABNORMAL_HEART_RATE"
+    ],
+    "event_type": "EMERGENCY",
+    "device_id": "esp32_pulse_001",
+    "_received_at": "2026-01-03T16:15:48.459859Z"
+  },
+  {
+    "timestamp": 20110,
+    "x": 1.031,
+    "y": -0.112,
+    "z": -0.015,
+    "magnitude": 1.038,
+    "fall_detected": true,
+    "bpm": 0.0,
+    "pulse_raw": 2921,
+    "is_critical": false,
+    "critical_reasons": [],
+    "event_type": "NORMAL",
+    "device_id": "esp32_pulse_001",
+    "_received_at": "2026-01-03T16:15:58.455303Z"
+  }
+]

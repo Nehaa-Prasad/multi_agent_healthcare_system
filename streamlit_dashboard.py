@@ -18,24 +18,25 @@ st.set_page_config(
 
 PYTHON = "python3"   # macOS uses python3
 
-# Data paths
-FALL_EVENTS_PATH = Path("data/fall_events.json")
-VITALS_PATH = Path("data/vitals_stream.json")
-REMINDERS_PATH = Path("data/reminders.json")
-ESCALATION_PATH = Path("data/escalation.json")
+# -------------------------------------
+# DATA LOCATION (CHANGED)
+# -------------------------------------
+
+BASE_DATA_DIR = Path("fall_detection_agent/data")
+
+FALL_EVENTS_PATH = BASE_DATA_DIR / "fall_events.json"
+VITALS_PATH = BASE_DATA_DIR / "vitals_stream.json"
+REMINDERS_PATH = BASE_DATA_DIR / "reminders.json"
+ESCALATION_PATH = BASE_DATA_DIR / "escalation.json"
 
 # -------------------------------------
 # FORCE GOOGLE CHROME (macOS)
 # -------------------------------------
 def open_in_chrome(url):
-    """
-    Force open URL in Google Chrome on macOS
-    """
     try:
         chrome_cmd = "open -a 'Google Chrome' %s"
         webbrowser.get(chrome_cmd).open(url)
     except Exception:
-        # fallback to default browser
         webbrowser.open(url)
 
 # -------------------------------------
@@ -43,7 +44,7 @@ def open_in_chrome(url):
 # -------------------------------------
 def load_json(filepath):
     try:
-        if not os.path.exists(filepath):
+        if not filepath.exists():
             return []
         with open(filepath, "r") as f:
             return json.load(f)
@@ -64,7 +65,6 @@ def load_fall_events():
         return json.loads(raw)
 
     except json.JSONDecodeError:
-        # NDJSON fallback
         events = []
         with open(FALL_EVENTS_PATH, "r") as f:
             for line in f:
@@ -146,19 +146,17 @@ with tab3:
         st.info("No reminders available.")
 
 # -------------------------------------
-# 4️⃣ EMERGENCY ALERTS (FIXED)
+# 4️⃣ EMERGENCY ALERTS
 # -------------------------------------
 with tab4:
     st.header("🚨 Emergency Alerts")
 
     escalation_data = load_json(ESCALATION_PATH)
-
-    # escalation.json is a LIST
     alerts = escalation_data if isinstance(escalation_data, list) else []
 
     if alerts:
         df = pd.DataFrame(alerts)
-        df = df.iloc[::-1]  # newest first
+        df = df.iloc[::-1]
         st.dataframe(df, use_container_width=True)
         st.success("Emergency alerts loaded successfully.")
     else:
@@ -169,7 +167,6 @@ with tab4:
 # -------------------------------------
 with tab5:
     st.header("🧠 Cognitive Chatbot & Quiz")
-    st.write("Click below to start the cognitive chatbot.")
 
     if st.button("▶️ Launch Chatbot"):
         try:
@@ -185,7 +182,6 @@ with tab5:
 # -------------------------------------
 with tab6:
     st.header("🧘‍♀️ Emotional Wellbeing Agent")
-    st.write("Chat with an emotional health support agent.")
 
     if st.button("💬 Launch Wellbeing Agent"):
         try:
