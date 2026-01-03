@@ -5,7 +5,6 @@ import pandas as pd
 import subprocess
 import webbrowser
 import time
-
 from pathlib import Path
 
 # -------------------------------------
@@ -26,6 +25,20 @@ REMINDERS_PATH = Path("data/reminders.json")
 ESCALATION_PATH = Path("data/escalation.json")
 
 # -------------------------------------
+# FORCE GOOGLE CHROME (macOS)
+# -------------------------------------
+def open_in_chrome(url):
+    """
+    Force open URL in Google Chrome on macOS
+    """
+    try:
+        chrome_cmd = "open -a 'Google Chrome' %s"
+        webbrowser.get(chrome_cmd).open(url)
+    except Exception:
+        # fallback to default browser
+        webbrowser.open(url)
+
+# -------------------------------------
 # SAFE JSON LOADER
 # -------------------------------------
 def load_json(filepath):
@@ -36,7 +49,6 @@ def load_json(filepath):
             return json.load(f)
     except Exception:
         return []
-
 
 # -------------------------------------
 # FALL EVENT LOADER (JSON / NDJSON SAFE)
@@ -67,7 +79,6 @@ def load_fall_events():
     except:
         return []
 
-
 # -------------------------------------
 # SAFE PROCESS RUNNER
 # -------------------------------------
@@ -76,7 +87,6 @@ def safe_run(relative_path):
     if not os.path.exists(full_path):
         raise FileNotFoundError(f"File not found: {full_path}")
     return subprocess.Popen([PYTHON, full_path])
-
 
 # -------------------------------------
 # DASHBOARD UI
@@ -107,7 +117,6 @@ with tab1:
     else:
         st.warning("No health data found.")
 
-
 # -------------------------------------
 # 2️⃣ FALL DETECTION
 # -------------------------------------
@@ -121,7 +130,6 @@ with tab2:
         st.success("Fall detection data loaded successfully.")
     else:
         st.warning("No fall data found.")
-
 
 # -------------------------------------
 # 3️⃣ REMINDERS
@@ -137,7 +145,6 @@ with tab3:
     else:
         st.info("No reminders available.")
 
-
 # -------------------------------------
 # 4️⃣ EMERGENCY ALERTS (FIXED)
 # -------------------------------------
@@ -146,20 +153,16 @@ with tab4:
 
     escalation_data = load_json(ESCALATION_PATH)
 
-    # escalation.json is a LIST (written by emergency agent)
+    # escalation.json is a LIST
     alerts = escalation_data if isinstance(escalation_data, list) else []
 
     if alerts:
         df = pd.DataFrame(alerts)
-
-        # Optional: show latest alerts first
-        df = df.iloc[::-1]
-
+        df = df.iloc[::-1]  # newest first
         st.dataframe(df, use_container_width=True)
         st.success("Emergency alerts loaded successfully.")
     else:
         st.info("No emergency alerts yet.")
-
 
 # -------------------------------------
 # 5️⃣ COGNITIVE CHATBOT
@@ -172,11 +175,10 @@ with tab5:
         try:
             safe_run("cognitive_health_agent/cog_bot.py")
             time.sleep(1)
-            webbrowser.open_new_tab("http://127.0.0.1:5001")
-            st.success("Chatbot launched in a new terminal!")
+            open_in_chrome("http://127.0.0.1:5001")
+            st.success("Chatbot launched in Google Chrome!")
         except Exception as e:
             st.error(f"Error launching chatbot: {e}")
-
 
 # -------------------------------------
 # 6️⃣ EMOTIONAL WELLBEING AGENT
@@ -189,7 +191,7 @@ with tab6:
         try:
             safe_run("emotional_wellbeing_agent/app.py")
             time.sleep(2)
-            webbrowser.open_new_tab("http://127.0.0.1:5000")
-            st.success("Wellbeing Agent launched successfully!")
+            open_in_chrome("http://127.0.0.1:5000")
+            st.success("Wellbeing Agent launched in Google Chrome!")
         except Exception as e:
             st.error(f"Error launching wellbeing agent: {e}")
