@@ -2,9 +2,11 @@
 emergency_agent.py
 macOS SAFE VERSION
 
-✔ Dumps NEW data every 3 seconds
-✔ No duplicate dumping
-✔ Writes escalation.json cleanly
+✔ Reads live fall data from data/fall_events.json
+✔ Decides CRITICAL inside emergency agent
+✔ Dumps CRITICAL + NORMAL data
+✔ Dumps dummy NORMAL vitals every 20s if no CRITICAL
+✔ Writes escalation.json to fall_detection_agent/data
 """
 
 import json
@@ -12,19 +14,32 @@ import os
 import time
 from datetime import datetime
 
-# ===== PATH SETUP (MAC SAFE) =====
+# -------------------------------------------------
+# PATH SETUP
+# -------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, "data")
 
-FALL_EVENTS_FILE = os.path.join(DATA_DIR, "fall_events.json")
-VITALS_FILE = os.path.join(DATA_DIR, "vitals_stream.json")
-ESCALATION_FILE = os.path.join(DATA_DIR, "escalation.json")
+MAIN_DATA_DIR = os.path.join(BASE_DIR, "data")
+FALL_EVENTS_FILE = os.path.join(MAIN_DATA_DIR, "fall_events.json")
 
-DUMP_INTERVAL = 3   # ⏱️ 3 seconds
+FALL_AGENT_DIR = os.path.join(BASE_DIR, "fall_detection_agent", "data")
+ESCALATION_FILE = os.path.join(FALL_AGENT_DIR, "escalation.json")
 
-os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(FALL_AGENT_DIR, exist_ok=True)
 
-# ===== HELPERS =====
+# -------------------------------------------------
+# SETTINGS
+# -------------------------------------------------
+FALL_CHECK_INTERVAL = 1        # seconds
+DUMMY_VITAL_INTERVAL = 20      # seconds  ⬅️ CHANGED HERE
+
+HIGH_MAG_THRESHOLD = 0.9
+LOW_BPM_THRESHOLD = 40
+HIGH_BPM_THRESHOLD = 180
+
+# -------------------------------------------------
+# HELPERS
+# -------------------------------------------------
 def load_json(path):
     if not os.path.exists(path):
         return []
@@ -34,58 +49,100 @@ def load_json(path):
     except:
         return []
 
-def write_json(path, data):
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
-    print(f"✅ escalation.json updated ({len(data)} records)")
+def ensure_list(data):
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        return data.get("events", [])
+    return []
 
-# ===== MAIN =====
+def append_escalation(record):
+    data = load_json(ESCALATION_FILE)
+    if not isinstance(data, list):
+        data = []
+
+    data.append(record)
+
+    with open(ESCALATION_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
+# -------------------------------------------------
+# MAIN
+# -------------------------------------------------
 def main():
-    print("\n🚨 Emergency Agent running (3s dump interval)")
-    print("Project root:", BASE_DIR)
-    print("Data dir    :", DATA_DIR)
+    print("\n🚨 Emergency Agent RUNNING")
+    print("Reading from :", FALL_EVENTS_FILE)
+    print("Writing to   :", ESCALATION_FILE)
     print("-" * 50)
 
-    escalations = load_json(ESCALATION_FILE)
-
-    last_fall_idx = 0
-    last_vitals_idx = 0
+    last_seen_falls = 0
+    last_critical_time = 0
 
     while True:
-        fall_events = load_json(FALL_EVENTS_FILE)
-        vitals_events = load_json(VITALS_FILE)
+        now = time.time()
 
-        # ---- NEW FALL RECORDS ----
-        if len(fall_events) > last_fall_idx:
-            new_falls = fall_events[last_fall_idx:]
+        # ---------------- FALL DATA ----------------
+        raw_falls = load_json(FALL_EVENTS_FILE)
+        fall_events = ensure_list(raw_falls)
+
+        if len(fall_events) > last_seen_falls:
+            new_falls = fall_events[last_seen_falls:]
+
             for rec in new_falls:
-                escalations.append({
+                mag = rec.get("mag", 0)
+                bpm = rec.get("bpm", 0)
+                critical_flag = rec.get("critical", False)
+
+                if (
+                    critical_flag or
+                    mag > HIGH_MAG_THRESHOLD or
+                    bpm < LOW_BPM_THRESHOLD or
+                    bpm > HIGH_BPM_THRESHOLD
+                ):
+                    severity = "CRITICAL"
+                    last_critical_time = now
+                else:
+                    severity = "NORMAL"
+
+                escalation = {
                     "timestamp": datetime.utcnow().isoformat() + "Z",
-                    "source": "fall_events",
-                    "device_id": rec.get("device_id", "unknown"),
-                    "data": rec
-                })
-                print("🟡 dumped new FALL record")
+                    "source": "fall_detection_agent",
+                    "severity": severity,
+                    "device_id": "esp32_01",
+                    "data": {
+                        "mag": mag,
+                        "bpm": bpm,
+                        "critical": critical_flag
+                    }
+                }
 
-            last_fall_idx = len(fall_events)
+                append_escalation(escalation)
+                print(f"🚨 FALL DUMPED → {severity}")
 
-        # ---- NEW VITAL RECORDS ----
-        if len(vitals_events) > last_vitals_idx:
-            new_vitals = vitals_events[last_vitals_idx:]
-            for rec in new_vitals:
-                escalations.append({
-                    "timestamp": datetime.utcnow().isoformat() + "Z",
-                    "source": "vitals_stream",
-                    "device_id": rec.get("device_id", "unknown"),
-                    "data": rec
-                })
-                print("🟡 dumped new VITAL record")
+            last_seen_falls = len(fall_events)
 
-            last_vitals_idx = len(vitals_events)
+        # ---------------- DUMMY VITAL DATA ----------------
+        if (now - last_critical_time) >= DUMMY_VITAL_INTERVAL:
+            dummy_vitals = {
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "source": "vitals_stream",
+                "severity": "NORMAL",
+                "device_id": "dummy_device",
+                "data": {
+                    "heart_rate": 72,
+                    "spo2": 98,
+                    "status": "normal"
+                }
+            }
 
-        write_json(ESCALATION_FILE, escalations)
-        time.sleep(DUMP_INTERVAL)
+            append_escalation(dummy_vitals)
+            last_critical_time = now
+            print("🟢 DUMMY VITAL → NORMAL")
 
-# ===== ENTRY =====
+        time.sleep(FALL_CHECK_INTERVAL)
+
+# -------------------------------------------------
+# ENTRY
+# -------------------------------------------------
 if __name__ == "__main__":
     main()
