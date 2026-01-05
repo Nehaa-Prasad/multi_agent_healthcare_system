@@ -1,12 +1,13 @@
 """
 emergency_agent.py
-macOS SAFE VERSION
+FINAL CLEAN ALERT-ONLY VERSION
 
-✔ Reads live fall data from data/fall_events.json
-✔ Decides CRITICAL inside emergency agent
-✔ Dumps CRITICAL + NORMAL data
-✔ Dumps dummy NORMAL vitals every 20s if no CRITICAL
-✔ Writes escalation.json to fall_detection_agent/data
+✔ No dummy vitals
+✔ No NORMAL spam
+✔ Shows only WARNING or CRITICAL
+✔ Uses fall agent critical flag
+✔ Uses BPM thresholds
+✔ Demo + paper ready
 """
 
 import json
@@ -19,50 +20,46 @@ from datetime import datetime
 # -------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-MAIN_DATA_DIR = os.path.join(BASE_DIR, "data")
-FALL_EVENTS_FILE = os.path.join(MAIN_DATA_DIR, "fall_events.json")
+FALL_EVENTS_FILE = os.path.join(
+    BASE_DIR,
+    "fall_detection_agent",
+    "data",
+    "fall_events.json"
+)
 
-FALL_AGENT_DIR = os.path.join(BASE_DIR, "fall_detection_agent", "data")
-ESCALATION_FILE = os.path.join(FALL_AGENT_DIR, "escalation.json")
+ESCALATION_FILE = os.path.join(
+    BASE_DIR,
+    "fall_detection_agent",
+    "data",
+    "escalation.json"
+)
 
-os.makedirs(FALL_AGENT_DIR, exist_ok=True)
+os.makedirs(os.path.dirname(ESCALATION_FILE), exist_ok=True)
 
 # -------------------------------------------------
 # SETTINGS
 # -------------------------------------------------
-FALL_CHECK_INTERVAL = 1        # seconds
-DUMMY_VITAL_INTERVAL = 20      # seconds  ⬅️ CHANGED HERE
+CHECK_INTERVAL = 1
 
-HIGH_MAG_THRESHOLD = 0.9
-LOW_BPM_THRESHOLD = 40
-HIGH_BPM_THRESHOLD = 180
+LOW_BPM = 40
+HIGH_BPM = 180
+EXTREME_BPM = 220
 
 # -------------------------------------------------
 # HELPERS
 # -------------------------------------------------
 def load_json(path):
-    if not os.path.exists(path):
-        return []
     try:
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
     except:
         return []
 
-def ensure_list(data):
-    if isinstance(data, list):
-        return data
-    if isinstance(data, dict):
-        return data.get("events", [])
-    return []
-
 def append_escalation(record):
     data = load_json(ESCALATION_FILE)
     if not isinstance(data, list):
         data = []
-
     data.append(record)
-
     with open(ESCALATION_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
@@ -70,76 +67,59 @@ def append_escalation(record):
 # MAIN
 # -------------------------------------------------
 def main():
-    print("\n🚨 Emergency Agent RUNNING")
-    print("Reading from :", FALL_EVENTS_FILE)
-    print("Writing to   :", ESCALATION_FILE)
+    print("\n🚨 Emergency Agent RUNNING (ALERT-ONLY MODE)")
+    print("Reading :", FALL_EVENTS_FILE)
+    print("Writing :", ESCALATION_FILE)
     print("-" * 50)
 
-    last_seen_falls = 0
-    last_critical_time = 0
+    last_event_hash = None
 
     while True:
-        now = time.time()
+        fall_events = load_json(FALL_EVENTS_FILE)
+        latest = fall_events[-1] if fall_events else None
 
-        # ---------------- FALL DATA ----------------
-        raw_falls = load_json(FALL_EVENTS_FILE)
-        fall_events = ensure_list(raw_falls)
+        if latest:
+            event_hash = json.dumps(latest, sort_keys=True)
 
-        if len(fall_events) > last_seen_falls:
-            new_falls = fall_events[last_seen_falls:]
+            if event_hash != last_event_hash:
+                last_event_hash = event_hash
 
-            for rec in new_falls:
-                mag = rec.get("mag", 0)
-                bpm = rec.get("bpm", 0)
-                critical_flag = rec.get("critical", False)
+                magnitude = float(latest.get("magnitude", 0))
+                bpm = float(latest.get("bpm", 0))
+                critical_flag = bool(latest.get("critical", False))
 
-                if (
-                    critical_flag or
-                    mag > HIGH_MAG_THRESHOLD or
-                    bpm < LOW_BPM_THRESHOLD or
-                    bpm > HIGH_BPM_THRESHOLD
-                ):
+                valid_bpm = LOW_BPM <= bpm <= 300
+
+                # -------- DECISION LOGIC --------
+                severity = None
+
+                if critical_flag:
                     severity = "CRITICAL"
-                    last_critical_time = now
-                else:
-                    severity = "NORMAL"
+                elif valid_bpm and bpm >= EXTREME_BPM:
+                    severity = "CRITICAL"
+                elif valid_bpm and (bpm < LOW_BPM or bpm > HIGH_BPM):
+                    severity = "WARNING"
 
-                escalation = {
-                    "timestamp": datetime.utcnow().isoformat() + "Z",
-                    "source": "fall_detection_agent",
-                    "severity": severity,
-                    "device_id": "esp32_01",
-                    "data": {
-                        "mag": mag,
-                        "bpm": bpm,
-                        "critical": critical_flag
+                # -------- LOG ONLY IF ALERT --------
+                if severity:
+                    icon = "🚨" if severity == "CRITICAL" else "🟠"
+
+                    escalation = {
+                        "timestamp": datetime.utcnow().isoformat() + "Z",
+                        "source": "emergency_agent",
+                        "severity": severity,
+                        "device_id": "esp32_01",
+                        "data": {
+                            "magnitude": magnitude,
+                            "bpm": bpm,
+                            "critical_from_fall_agent": critical_flag
+                        }
                     }
-                }
 
-                append_escalation(escalation)
-                print(f"🚨 FALL DUMPED → {severity}")
+                    append_escalation(escalation)
+                    print(f"{icon} EVENT → {severity} | mag={magnitude} bpm={bpm} critical={critical_flag}")
 
-            last_seen_falls = len(fall_events)
-
-        # ---------------- DUMMY VITAL DATA ----------------
-        if (now - last_critical_time) >= DUMMY_VITAL_INTERVAL:
-            dummy_vitals = {
-                "timestamp": datetime.utcnow().isoformat() + "Z",
-                "source": "vitals_stream",
-                "severity": "NORMAL",
-                "device_id": "dummy_device",
-                "data": {
-                    "heart_rate": 72,
-                    "spo2": 98,
-                    "status": "normal"
-                }
-            }
-
-            append_escalation(dummy_vitals)
-            last_critical_time = now
-            print("🟢 DUMMY VITAL → NORMAL")
-
-        time.sleep(FALL_CHECK_INTERVAL)
+        time.sleep(CHECK_INTERVAL)
 
 # -------------------------------------------------
 # ENTRY
